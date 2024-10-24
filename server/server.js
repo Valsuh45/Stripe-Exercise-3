@@ -29,7 +29,7 @@ const pricesByCurrency = {
   gbp: { amount: 800, currency: 'gbp' },  // £8.00
 };
 
-// Create a checkout session with multi-currency support
+// Create a checkout session with multi-currency support and saving card details for future use
 app.post("/create-checkout-session", async (req, res) => {
   const { currency } = req.body; // Receive the currency from client-side
 
@@ -67,6 +67,22 @@ app.post("/create-checkout-session", async (req, res) => {
       mode: 'payment',
       success_url: `${req.headers.origin}/success.html`,
       cancel_url: `${req.headers.origin}/cancel.html`,
+      
+      // Save the card for future use and add metadata
+      payment_intent_data: {
+        setup_future_usage: 'off_session', // Save card for future payments
+        metadata: {
+          customer_email: req.body.customerEmail, // Add any relevant metadata
+          order_id: '12345',  // Example metadata
+        }
+      },
+      
+      // Save only for card payments
+      payment_method_options: {
+        card: {
+          setup_future_usage: 'off_session', // Save the card details for future use
+        }
+      },
     });
 
     console.log("Checkout Session created:", session);
@@ -85,35 +101,6 @@ app.post("/create-checkout-session", async (req, res) => {
     });
   }
 });
-
-
-// New Payment Intent endpoint
-// app.post("/create-payment-intent", async (req, res) => {
-//   try {
-//     const { amount, currency, description, receipt_email } = req.body;
-
-//     // Create a Payment Intent
-//     const paymentIntent = await stripe.paymentIntents.create({
-//       amount: amount, // Amount in cents
-//       currency: currency, // Currency
-//       description: description || 'Payment for product',
-//       receipt_email: receipt_email || '', // Optional email for the receipt
-//       // You can add more options here if needed
-//     });
-
-//     // Send the Payment Intent details back to the client
-//     res.send({
-//       clientSecret: paymentIntent.client_secret,
-//       paymentIntentId: paymentIntent.id,
-//     });
-//   } catch (e) {
-//     return res.status(400).send({
-//       error: {
-//         message: e.message,
-//       },
-//     });
-//   }
-// });
 
 
 app.listen(5252, () =>
