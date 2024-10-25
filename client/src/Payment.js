@@ -14,7 +14,7 @@ function Payment() {
 
   // Function to create the Checkout session
   const handleCheckout = async () => {
-    const response = await fetch("/create-checkout-session", {
+    const response = await fetch("/create-subscription-session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
