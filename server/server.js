@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const { resolve } = require("path");
-// Replace if using a different env file or config
 const env = require("dotenv").config({ path: "./.env" });
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
@@ -22,62 +21,67 @@ app.get("/config", (req, res) => {
   });
 });
 
-// NEW FUNCTIONALITY: Checkout Session for "pay what you want" pricing and multi-currency
-app.post("/create-checkout-session", async (req, res) => {
-  try {
-    console.log("Starting to create Checkout Session...");
+// Define standard prices for each currency
+const pricesByCurrency = {
+  usd: { amount: 1000, currency: 'usd' }, // $10.00
+  eur: { amount: 900, currency: 'eur' },  // €9.00
+  gbp: { amount: 800, currency: 'gbp' },  // £8.00
+};
 
+// Create a checkout session with multi-currency support
+app.post("/create-checkout-session", async (req, res) => {
+  const { currency, customerEmail } = req.body;
+
+  try {
     // Create a product
     const product = await stripe.products.create({
-      name: 'Custom Product', // Can customize product name/description
-      description: 'This product supports custom pricing',
+      name: 'Custom Product',
+      description: 'Multi-currency product',
     });
 
-    console.log("Product created:", product);
-
-    // Pay What You Want (Custom Amount) Pricing Model
+    // Create a recurring price for subscription
     const price = await stripe.prices.create({
-      currency: 'eur', // Base currency
-      custom_unit_amount: {
-        enabled: true, // Enables customer to specify amount
-        minimum: 500,  // Minimum price (in cents)
-        maximum: 5000, // Maximum price (in cents)
-      },
-      product: product.id, // Use the product created above
+      unit_amount: 1000, // Example amount (in smallest currency unit, e.g., cents)
+      currency: currency || 'usd',
+      product: product.id,
+      recurring: { interval: 'month' } // Define as a recurring monthly subscription
     });
 
-    console.log("Price created with custom_unit_amount:", price);
+    // Define success and cancel URLs
+    const successUrl = 'http://localhost:5252/success.html' || `${process.env.SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = process.env.CANCEL_URL;
 
-    // Create a Checkout Session with multi-currency support (example only for EUR)
+    // Create the Checkout Session in subscription mode
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'], // Adjust as needed
+      payment_method_types: ['card'],
       line_items: [
         {
-          price: price.id, // Use Price object created with custom_unit_amount
+          price: price.id,
           quantity: 1,
         },
       ],
-      mode: 'payment', // 'payment' for one-time purchase
-      success_url: `${req.headers.origin}/success.html`,
-      cancel_url: `${req.headers.origin}/cancel.html`,
-    });
-
-    console.log("Checkout Session created:", session);
-
-    // Send the session ID to the client
-    res.send({
-      sessionId: session.id,
-    });
-  } catch (e) {
-    console.error("Error creating Checkout Session:", e.message);
-    return res.status(400).send({
-      error: {
-        message: e.message,
-        requestId: e.requestId, // Log request ID for debugging
+      mode: 'subscription', // Subscription mode for recurring payments
+      customer_email: customerEmail,
+      subscription_data: {
+        metadata: { order_id: '12345' },
       },
+      payment_method_collection: 'if_required',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
+
+    // Send the URL to the client
+    res.send({ url: session.url });
+  } catch (error) {
+    console.error("Error creating Checkout Session:", error.message);
+    res.status(400).send({
+      error: { message: error.message, requestId: error.requestId },
     });
   }
 });
+
+
+
 
 // New Payment Intent endpoint
 // app.post("/create-payment-intent", async (req, res) => {
