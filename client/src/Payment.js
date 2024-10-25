@@ -14,7 +14,7 @@ function Payment() {
           },
           body: JSON.stringify({
             currency: 'usd',  // Example data; set according to your requirement
-            customerEmail: 'customer@example.com'
+            customerEmail: 'ran673@gmail.com'
           }),
         });
         
