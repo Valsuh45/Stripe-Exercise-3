@@ -39,10 +39,6 @@ app.post("/create-checkout-session", async (req, res) => {
       recurring: { interval: 'month' } // Define as a recurring monthly subscription
     });
 
-    // Define success and cancel URLs
-    const successUrl = 'http://localhost:5252' || `${process.env.SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = process.env.CANCEL_URL;
-
     // Create the Checkout Session in subscription mode
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -58,8 +54,8 @@ app.post("/create-checkout-session", async (req, res) => {
         metadata: { order_id: '12345' },
       },
       payment_method_collection: 'if_required',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/cancel.html`,
     });
 
     // Send the URL to the client
