@@ -4,7 +4,7 @@ const { resolve } = require("path");
 const env = require("dotenv").config({ path: "./.env" });
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2022-08-01",
+  apiVersion: "2024-04-10",
 });
 
 app.use(express.json());
@@ -21,37 +21,38 @@ app.get("/config", (req, res) => {
   });
 });
 
-// Define standard prices for each currency
-const pricesByCurrency = {
-  usd: { amount: 1000, currency: 'usd' }, // $10.00
-  eur: { amount: 900, currency: 'eur' },  // €9.00
-  gbp: { amount: 800, currency: 'gbp' },  // £8.00
-};
-
-// Create a checkout session with multi-currency support
+// Set up future payments without immediate charge
 app.post("/create-checkout-session", async (req, res) => {
   const { currency, customerEmail } = req.body;
 
   try {
-    // Create a product
+    console.log("Starting to create Subscription Checkout Session...");
+
+    // Create a product (reuse or store product ID in a real implementation)
     const product = await stripe.products.create({
-      name: 'Custom Product',
-      description: 'Multi-currency product',
+      name: 'Custom Subscription Product',
+      description: 'Multi-currency subscription product',
     });
 
-    // Create a recurring price for subscription
+    console.log("Product created:", product);
+
+    // Get the correct price based on currency
+    const priceData = pricesByCurrency[currency] || pricesByCurrency['usd']; // Default to USD if no currency provided
+
     const price = await stripe.prices.create({
-      unit_amount: 1000, // Example amount (in smallest currency unit, e.g., cents)
-      currency: currency || 'usd',
+      unit_amount: priceData.amount,
+      currency: priceData.currency,
+      recurring: { interval: 'month' }, // Monthly subscription
       product: product.id,
-      recurring: { interval: 'month' } // Define as a recurring monthly subscription
     });
 
-    // Define success and cancel URLs
-    const successUrl = 'http://localhost:5252/success.html' || `${process.env.SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = process.env.CANCEL_URL;
+    console.log("Price created:", price);
 
-    // Create the Checkout Session in subscription mode
+    // Set up URLs
+    const successUrl = process.env.SUCCESS_URL || "http://localhost:4242/success.html";
+    const cancelUrl = process.env.CANCEL_URL || "http://localhost:4242/cancel.html";
+
+    // Create a subscription Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -60,56 +61,36 @@ app.post("/create-checkout-session", async (req, res) => {
           quantity: 1,
         },
       ],
-      mode: 'subscription', // Subscription mode for recurring payments
+      mode: 'subscription',
       customer_email: customerEmail,
       subscription_data: {
-        metadata: { order_id: '12345' },
+        trial_period_days: 14, // Optional free trial period
+        metadata: {
+          customer_email: customerEmail,
+          order_id: '12345'
+        },
       },
-      payment_method_collection: 'if_required',
+      payment_method_collection: 'if_required', // Optional: collect payment only if required
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
 
-    // Send the URL to the client
-    res.send({ url: session.url });
-  } catch (error) {
-    console.error("Error creating Checkout Session:", error.message);
-    res.status(400).send({
-      error: { message: error.message, requestId: error.requestId },
+    console.log("Subscription Checkout Session created:", session);
+
+    // Send the session ID to the client
+    res.send({
+      sessionId: session.id,
+    });
+  } catch (e) {
+    console.error("Error creating Subscription Checkout Session:", e.message);
+    return res.status(400).send({
+      error: {
+        message: e.message,
+        requestId: e.requestId,
+      },
     });
   }
 });
-
-
-
-
-// New Payment Intent endpoint
-// app.post("/create-payment-intent", async (req, res) => {
-//   try {
-//     const { amount, currency, description, receipt_email } = req.body;
-
-//     // Create a Payment Intent
-//     const paymentIntent = await stripe.paymentIntents.create({
-//       amount: amount, // Amount in cents
-//       currency: currency, // Currency
-//       description: description || 'Payment for product',
-//       receipt_email: receipt_email || '', // Optional email for the receipt
-//       // You can add more options here if needed
-//     });
-
-//     // Send the Payment Intent details back to the client
-//     res.send({
-//       clientSecret: paymentIntent.client_secret,
-//       paymentIntentId: paymentIntent.id,
-//     });
-//   } catch (e) {
-//     return res.status(400).send({
-//       error: {
-//         message: e.message,
-//       },
-//     });
-//   }
-// });
 
 
 app.listen(5252, () =>
