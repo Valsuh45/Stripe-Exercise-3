@@ -2,9 +2,8 @@ const express = require("express");
 const app = express();
 const { resolve } = require("path");
 const env = require("dotenv").config({ path: "./.env" });
-
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-04-10",
+  apiVersion: "2022-08-01",
 });
 
 app.use(express.json());
@@ -21,38 +20,30 @@ app.get("/config", (req, res) => {
   });
 });
 
-// Set up future payments without immediate charge
+// Endpoint to create Checkout Session
 app.post("/create-checkout-session", async (req, res) => {
   const { currency, customerEmail } = req.body;
 
   try {
-    console.log("Starting to create Subscription Checkout Session...");
-
-    // Create a product (reuse or store product ID in a real implementation)
+    // Create a product
     const product = await stripe.products.create({
-      name: 'Custom Subscription Product',
-      description: 'Multi-currency subscription product',
+      name: 'Custom Product',
+      description: 'Multi-currency product',
     });
 
-    console.log("Product created:", product);
-
-    // Get the correct price based on currency
-    const priceData = pricesByCurrency[currency] || pricesByCurrency['usd']; // Default to USD if no currency provided
-
+    // Create a recurring price for subscription
     const price = await stripe.prices.create({
-      unit_amount: priceData.amount,
-      currency: priceData.currency,
-      recurring: { interval: 'month' }, // Monthly subscription
+      unit_amount: 1000, // Example amount (in smallest currency unit, e.g., cents)
+      currency: currency || 'usd',
       product: product.id,
+      recurring: { interval: 'month' } // Define as a recurring monthly subscription
     });
 
-    console.log("Price created:", price);
+    // Define success and cancel URLs
+    const successUrl = 'http://localhost:5252' || `${process.env.SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = process.env.CANCEL_URL;
 
-    // Set up URLs
-    const successUrl = process.env.SUCCESS_URL || "http://localhost:4242/success.html";
-    const cancelUrl = process.env.CANCEL_URL || "http://localhost:4242/cancel.html";
-
-    // Create a subscription Checkout Session
+    // Create the Checkout Session in subscription mode
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -61,36 +52,26 @@ app.post("/create-checkout-session", async (req, res) => {
           quantity: 1,
         },
       ],
-      mode: 'subscription',
+      mode: 'subscription', // Subscription mode for recurring payments
       customer_email: customerEmail,
       subscription_data: {
-        trial_period_days: 14, // Optional free trial period
-        metadata: {
-          customer_email: customerEmail,
-          order_id: '12345'
-        },
+        metadata: { order_id: '12345' },
       },
-      payment_method_collection: 'if_required', // Optional: collect payment only if required
+      payment_method_collection: 'if_required',
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
 
-    console.log("Subscription Checkout Session created:", session);
-
-    // Send the session ID to the client
-    res.send({
-      sessionId: session.id,
-    });
-  } catch (e) {
-    console.error("Error creating Subscription Checkout Session:", e.message);
-    return res.status(400).send({
-      error: {
-        message: e.message,
-        requestId: e.requestId,
-      },
+    // Send the URL to the client
+    res.send({ url: session.url });
+  } catch (error) {
+    console.error("Error creating Checkout Session:", error.message);
+    res.status(400).send({
+      error: { message: error.message, requestId: error.requestId },
     });
   }
 });
+
 
 
 app.listen(5252, () =>
