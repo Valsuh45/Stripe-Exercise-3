@@ -21,54 +21,26 @@ app.get("/config", (req, res) => {
   });
 });
 
-const pricesByCurrency = {
-  usd: { amount: 1000, currency: 'usd' }, // $10.00
-  eur: { amount: 900, currency: 'eur' },  // €9.00
-  gbp: { amount: 800, currency: 'gbp' },  // £8.00
-};
-
-// Create a subscription session with trial period and multi-currency support
-app.post("/create-subscription-session", async (req, res) => {
-  const { currency } = req.body;
+// Set up future payments without immediate charge
+app.post("/create-setup-session", async (req, res) => {
+  const { customerEmail } = req.body;
 
   try {
-    // Create a product for subscription
-    const product = await stripe.products.create({
-      name: 'Custom Subscription Product',
-      description: 'Multi-currency subscription product with trial period',
-    });
-
-    // Get the correct price based on currency
-    const priceData = pricesByCurrency[currency] || pricesByCurrency['usd'];
-
-    const price = await stripe.prices.create({
-      unit_amount: priceData.amount,
-      currency: priceData.currency,
-      recurring: { interval: 'month' }, // Monthly subscription
-      product: product.id,
-    });
-
-    // Create a checkout session for the subscription
+    // Create a checkout session in setup mode
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: price.id,
-          quantity: 1,
-        },
-      ],
-      mode: 'subscription',
+      mode: 'setup', // Setting up for future payments
       success_url: `${req.headers.origin}/success.html`,
       cancel_url: `${req.headers.origin}/cancel.html`,
       
-      // Set trial period and payment collection
-      payment_method_collection: 'always', // Collect payment method even if not charged immediately
-      subscription_data: {
-        trial_period_days: 14, // 14-day free trial
+      // Set additional metadata and setup intent parameters
+      setup_intent_data: {
         metadata: {
-          order_id: '12345',
-        },
-      },
+          customer_email: customerEmail, // Store customer email
+          purpose: 'Future off-session charges', // Example metadata
+          order_id: '12345', // Additional metadata
+        }
+      }
     });
 
     // Send the session ID to the client
@@ -76,7 +48,7 @@ app.post("/create-subscription-session", async (req, res) => {
       sessionId: session.id,
     });
   } catch (e) {
-    console.error("Error creating subscription session:", e.message);
+    console.error("Error creating setup session:", e.message);
     return res.status(400).send({
       error: {
         message: e.message,
