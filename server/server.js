@@ -22,36 +22,20 @@ app.get("/config", (req, res) => {
 
 // Endpoint to create Checkout Session
 app.post("/create-checkout-session", async (req, res) => {
-  const { currency, customerEmail } = req.body;
-
   try {
     // Create a product
     const product = await stripe.products.create({
       name: 'Custom Product',
       description: 'Multi-currency product',
     });
-
-    // Create a recurring price for subscription
+    // Create a recurring price for the subscription
     const price = await stripe.prices.create({
-      unit_amount: 1000, // Example amount (in smallest currency unit, e.g., cents)
-      currency: currency || 'usd',
+      unit_amount: 1000, // Example amount in smallest currency unit, e.g., cents
+      currency: 'usd',   // Defaults to USD, but can be adjusted if needed
       product: product.id,
-      recurring: { interval: 'month' } // Define as a recurring monthly subscription
+      recurring: { interval: 'month' } // Recurring monthly subscription
     });
-
-    // Check if we have a customerEmail to pass as the customer
-    let customerId = null;
-    if (customerEmail) {
-      // Check if an existing customer already exists for the provided email
-      const customer = await stripe.customers.list({
-        email: customerEmail,
-        limit: 1,
-      });
-      if (customer.data.length) {
-        customerId = customer.data[0].id;
-      }
-    }
-
+    // Define session configuration
     const sessionConfig = {
       payment_method_types: ['card'],
       line_items: [
@@ -60,26 +44,18 @@ app.post("/create-checkout-session", async (req, res) => {
           quantity: 1,
         },
       ],
-      mode: 'subscription', // Subscription mode for recurring payments
-      customer: customerId || undefined, // Scenario: If customer is not provided, Stripe will create a new Customer
-      customer_email: !customerId ? customerEmail : undefined, // For guest customer use if no existing customer
+      mode: 'subscription', // Mode set to subscription for recurring payments
+      // No 'customer' or 'customer_email' to ensure Stripe creates a new Customer
       subscription_data: {
-        metadata: { order_id: '12345' },
+        metadata: { order_id: '12345' }, // Custom metadata for the subscription
       },
       payment_method_collection: 'if_required',
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel.html`,
     };
-    
     // Create the Checkout Session
     const session = await stripe.checkout.sessions.create(sessionConfig);
-
-    if (session.customer) {
-    } else {
-  
-    }
-
-    // Send the URL to the client
+    // Send the Checkout URL to the client
     res.send({ url: session.url });
   } catch (error) {
     console.error("Error creating Checkout Session:", error.message);
@@ -88,6 +64,7 @@ app.post("/create-checkout-session", async (req, res) => {
     });
   }
 });
+
 
 app.listen(5252, () =>
   console.log(`Node server listening at http://localhost:5252`)
