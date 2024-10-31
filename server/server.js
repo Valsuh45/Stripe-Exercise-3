@@ -65,7 +65,7 @@ app.post("/create-checkout-session", async (req, res) => {
 
       // Enable shipping address collection
       shipping_address_collection: {
-        allowed_countries: ['US', 'CA', 'GB'], // specify countries where you want to ship
+        allowed_countries: ['US', 'CA', 'DE'], // specify countries where you want to ship
       },
 
       // Define shipping options using pre-existing Shipping Rate objects
