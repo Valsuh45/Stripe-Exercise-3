@@ -1,5 +1,5 @@
 const express = require("express");
-const cors = require("cors"); // Add CORS
+const cors = require("cors");
 const app = express();
 const { resolve } = require("path");
 const env = require("dotenv").config({ path: "./.env" });
@@ -34,19 +34,19 @@ app.post("/create-checkout-session", async (req, res) => {
       name: 'Custom Product',
       description: 'Multi-currency product',
     });
-    console.log("Product created:", product.id);
+    console.log("Product created:", product.id); // Log product ID for debugging
 
     // Create a price for the created product
     const price = await stripe.prices.create({
-      unit_amount: 1000,
+      unit_amount: 1000, // Example amount in smallest currency unit, e.g., cents
       currency: 'usd',
       product: product.id,
     });
-    console.log("Price created:", price.id);
+    console.log("Price created:", price.id); // Log price ID for debugging
 
     // Configure the Checkout Session with automatic tax and tax ID collection
     const sessionConfig = {
-      payment_method_types: ['card', 'eps'], 
+      payment_method_types: ['card', 'eps'], // Available payment methods
 
       // Define line items with the created price
       line_items: [
@@ -55,28 +55,35 @@ app.post("/create-checkout-session", async (req, res) => {
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: 'payment', // Set mode to 'payment' for a one-time purchase
 
+      // URLs to redirect after successful or canceled payment
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel.html`,
       
+      // Enable Stripe's automatic tax calculation
       automatic_tax: { enabled: true },
+
+      // Enable tax ID collection in the session
       tax_id_collection: { enabled: true },
 
-      // Enable phone number collection
-      // This will prompt users to enter their phone number at checkout
-      phone_number_collection: { enabled: true }, // <-- Enabled phone number collection
+      // Implemented features:
 
-      // Require billing address collection
-      // This will make billing address mandatory in the Checkout Session
-      billing_address_collection: "required", // <-- Make billing address required
+      // 1. Enable phone number collection
+      phone_number_collection: { enabled: true }, // <--- Enabling phone number collection
+
+      // 2. Make billing address required
+      billing_address_collection: "required", // <--- Making billing address required
+
+      // 3. Collect a shipping address
+      shipping_address_collection: { allowed_countries: ["US", "CA", "DE"] }, // <--- Collecting shipping address
     };
 
     console.log("Checkout Session config:", sessionConfig);
 
     // Create the Checkout Session
     const session = await stripe.checkout.sessions.create(sessionConfig);
-    console.log("Checkout Session created:", session.id);
+    console.log("Checkout Session created:", session.id); // Log session ID
 
     // Send the Checkout URL to the client
     res.send({ url: session.url });
@@ -88,6 +95,7 @@ app.post("/create-checkout-session", async (req, res) => {
   }
 });
 
+// Start the server and log the listening port
 app.listen(5252, () =>
   console.log("Node server listening at http://localhost:5252")
 );
