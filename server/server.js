@@ -77,6 +77,32 @@ app.post("/create-checkout-session", async (req, res) => {
 
       // 3. Collect a shipping address
       shipping_address_collection: { allowed_countries: ["US", "CA", "DE"] }, // <--- Collecting shipping address
+
+      // 4. Set up shipping options (here as an example)
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            display_name: "Standard Shipping",
+            type: "fixed_amount",
+            fixed_amount: { amount: 500, currency: "usd" },
+            delivery_estimate: {
+              minimum: { unit: "business_day", value: 5 },
+              maximum: { unit: "business_day", value: 7 },
+            },
+          },
+        },
+        {
+          shipping_rate_data: {
+            display_name: "Express Shipping",
+            type: "fixed_amount",
+            fixed_amount: { amount: 1500, currency: "usd" },
+            delivery_estimate: {
+              minimum: { unit: "business_day", value: 1 },
+              maximum: { unit: "business_day", value: 3 },
+            },
+          },
+        },
+      ], // 
     };
 
     console.log("Checkout Session config:", sessionConfig);
