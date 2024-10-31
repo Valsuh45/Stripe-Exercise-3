@@ -13,7 +13,7 @@ export default function CheckoutForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currency: "usd", 
-          customerEmail: "customer@example.com",
+          customerEmail: customerEmail,
         }),
       });
 
