@@ -1,5 +1,5 @@
 const express = require("express");
-const cors = require("cors");
+const cors = require("cors"); 
 const app = express();
 const { resolve } = require("path");
 const env = require("dotenv").config({ path: "./.env" });
@@ -7,24 +7,21 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-04-10",
 });
 
-app.use(cors()); // Enable CORS for all origins (for development purposes)
+app.use(cors()); 
 app.use(express.json());
 app.use(express.static(process.env.STATIC_DIR));
 
-// Serve the static index file
 app.get("/", (req, res) => {
   const path = resolve(process.env.STATIC_DIR + "/index.html");
   res.sendFile(path);
 });
 
-// Send Stripe publishable key to the client
 app.get("/config", (req, res) => {
   res.send({
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
   });
 });
 
-// Endpoint to create a Checkout Session
 app.post("/create-checkout-session", async (req, res) => {
   try {
     console.log("Request received to create Checkout Session");
@@ -34,82 +31,52 @@ app.post("/create-checkout-session", async (req, res) => {
       name: 'Custom Product',
       description: 'Multi-currency product',
     });
-    console.log("Product created:", product.id); // Log product ID for debugging
+    console.log("Product created:", product.id);
 
     // Create a price for the created product
     const price = await stripe.prices.create({
-      unit_amount: 1000, // Example amount in smallest currency unit, e.g., cents
-      currency: 'usd',
+      unit_amount: 1000,
+      currency: 'eur',
       product: product.id,
     });
-    console.log("Price created:", price.id); // Log price ID for debugging
+    console.log("Price created:", price.id);
 
-    // Configure the Checkout Session with automatic tax and tax ID collection
+    // Pre-defined shipping rate IDs (these should be created in Stripe Dashboard or via API beforehand)
+    const shippingRateIds = [
+      "shr_1QFzc5Hcq0BpKt6rDvnFMpTI", // replace with actual ID from your Stripe account
+      "shr_1QFzdHHcq0BpKt6rxvAc7STP"   // replace with actual ID from your Stripe account
+    ];
+
     const sessionConfig = {
-      payment_method_types: ['card', 'eps'], // Available payment methods
-
-      // Define line items with the created price
+      payment_method_types: ['card', 'eps'],
       line_items: [
         {
           price: price.id,
           quantity: 1,
         },
       ],
-      mode: 'payment', // Set mode to 'payment' for a one-time purchase
-
-      // URLs to redirect after successful or canceled payment
+      mode: 'payment',
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel.html`,
-      
-      // Enable Stripe's automatic tax calculation
       automatic_tax: { enabled: true },
-
-      // Enable tax ID collection in the session
       tax_id_collection: { enabled: true },
+      phone_number_collection: { enabled: true },
+      billing_address_collection: "required",
 
-      // Implemented features:
+      // Enable shipping address collection
+      shipping_address_collection: {
+        allowed_countries: ['US', 'CA', 'GB'], // specify countries where you want to ship
+      },
 
-      // 1. Enable phone number collection
-      phone_number_collection: { enabled: true }, // <--- Enabling phone number collection
-
-      // 2. Make billing address required
-      billing_address_collection: "required", // <--- Making billing address required
-
-      // 3. Collect a shipping address
-      shipping_address_collection: { allowed_countries: ["US", "CA", "DE"] }, // <--- Collecting shipping address
-
-      // 4. Set up shipping options (here as an example)
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            display_name: "Standard Shipping",
-            type: "fixed_amount",
-            fixed_amount: { amount: 500, currency: "usd" },
-            delivery_estimate: {
-              minimum: { unit: "business_day", value: 5 },
-              maximum: { unit: "business_day", value: 7 },
-            },
-          },
-        },
-        {
-          shipping_rate_data: {
-            display_name: "Express Shipping",
-            type: "fixed_amount",
-            fixed_amount: { amount: 1500, currency: "usd" },
-            delivery_estimate: {
-              minimum: { unit: "business_day", value: 1 },
-              maximum: { unit: "business_day", value: 3 },
-            },
-          },
-        },
-      ], // 
+      // Define shipping options using pre-existing Shipping Rate objects
+      shipping_options: shippingRateIds.map(id => ({ shipping_rate: id }))
     };
 
     console.log("Checkout Session config:", sessionConfig);
 
     // Create the Checkout Session
     const session = await stripe.checkout.sessions.create(sessionConfig);
-    console.log("Checkout Session created:", session.id); // Log session ID
+    console.log("Checkout Session created:", session.id);
 
     // Send the Checkout URL to the client
     res.send({ url: session.url });
@@ -121,7 +88,6 @@ app.post("/create-checkout-session", async (req, res) => {
   }
 });
 
-// Start the server and log the listening port
 app.listen(5252, () =>
   console.log("Node server listening at http://localhost:5252")
 );
