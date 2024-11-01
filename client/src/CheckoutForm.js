@@ -8,7 +8,7 @@ export default function CheckoutForm() {
 
     try {
       // Request the server to create a Checkout Session
-      const response = await fetch("/create-checkout-session", {
+      const response = await fetch("https://hosted1.onrender.com/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

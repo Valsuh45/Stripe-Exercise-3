@@ -8,7 +8,7 @@ function Payment() {
   useEffect(() => {
     const createCheckoutSession = async () => {
       try {
-        const response = await fetch("/create-checkout-session", {
+        const response = await fetch("https://hosted1.onrender.com/create-checkout-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

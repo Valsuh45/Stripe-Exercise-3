@@ -1,58 +1,58 @@
 const express = require("express");
 const app = express();
 const { resolve } = require("path");
-require("dotenv").config();
+const env = require("dotenv").config({ path: "./.env" });
+
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-04-10",
+  apiVersion: "2022-08-01",
 });
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+app.use(express.json());
+app.use(express.static(process.env.STATIC_DIR));
 
-app.use(express.static(process.env.STATIC_DIR)); // Make sure this is pointing to the ngrok URL
+// Mock database for storing customer IDs
+const customerDatabase = {}; // Replace this with your real database
 
-// Serve static HTML
 app.get("/", (req, res) => {
-  const path = resolve(process.env.STATIC_DIR);
+  const path = resolve(process.env.STATIC_DIR + "/index.html");
   res.sendFile(path);
 });
 
-// Send Stripe publishable key
-app.get("/config", (req, res) => {
-  res.send({
-    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
-  });
-});
-
-// Create Checkout Session
-app.post("/create-checkout-session", express.json(), async (req, res) => {
+app.post("/create-checkout-session", async (req, res) => {
   try {
+    // Create a product
     const product = await stripe.products.create({
-      name: "Custom Product",
-      description: "Multi-currency product",
+      name: 'Custom Product',
+      description: 'Multi-currency product',
     });
-
+    // Create a recurring price for the subscription
     const price = await stripe.prices.create({
-      unit_amount: 1000,
-      currency: "EUR",
+      unit_amount: 1000, // Example amount in smallest currency unit, e.g., cents
+      currency: 'usd',   // Defaults to USD, but can be adjusted if needed
       product: product.id,
+      // recurring: { interval: 'month' } // Recurring monthly subscription
     });
-
+    // Define session configuration
     const sessionConfig = {
-      payment_method_types: ["card", "sepa_debit"], // Includes Apple Pay and Google Pay
-      line_items: [{ price: price.id, quantity: 1 }],
-      mode: "payment",
-      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      expires_at: Math.floor(Date.now() / 1000) + 180,
-
-      after_expiration: {
-        recovery: {
-          enabled: true,
-          allow_promotion_codes: true,
+      payment_method_types: ['card','eps'],
+      line_items: [
+        {
+          price: price.id,
+          quantity: 1,
         },
-      },
+      ],
+      mode: 'payment', // Mode set to subscription for recurring payments
+      // No 'customer' or 'customer_email' to ensure Stripe creates a new Customer
+      // subscription_data: {
+      //   metadata: { order_id: '12345' }, // Custom metadata for the subscription
+      // },
+      // payment_method_collection: 'if_required',
+      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/cancel.html`,
     };
-
+    // Create the Checkout Session
     const session = await stripe.checkout.sessions.create(sessionConfig);
+    // Send the Checkout URL to the client
     res.send({ url: session.url });
   } catch (error) {
     console.error("Error creating Checkout Session:", error.message);
@@ -61,36 +61,39 @@ app.post("/create-checkout-session", express.json(), async (req, res) => {
     });
   }
 });
+/home/boris/stripe/stripe-exercise3/Stripe-Exercise-3/server
 
-// Webhook endpoint for handling events
-app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
-  const sig = req.headers["stripe-signature"];
 
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.error("Webhook signature verification failed:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
 
-  // Handle Stripe events
-  switch (event.type) {
-    case "payment_intent.succeeded":
-      console.log("Payment succeeded!");
-      break;
-    case "payment_intent.processing":
-      console.log("Payment processing...");
-      break;
-    case "payment_intent.payment_failed":
-      console.log("Payment failed.");
-      break;
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
+// New Payment Intent endpoint
+// app.post("/create-payment-intent", async (req, res) => {
+//   try {
+//     const { amount, currency, description, receipt_email } = req.body;
 
-  res.json({ received: true });
-});
+//     // Create a Payment Intent
+//     const paymentIntent = await stripe.paymentIntents.create({
+//       amount: amount, // Amount in cents
+//       currency: currency, // Currency
+//       description: description || 'Payment for product',
+//       receipt_email: receipt_email || '', // Optional email for the receipt
+//       // You can add more options here if needed
+//     });
 
-// Start the server
-app.listen(5252, () => console.log(`Server running at http://localhost:5252`));
+//     // Send the Payment Intent details back to the client
+//     res.send({
+//       clientSecret: paymentIntent.client_secret,
+//       paymentIntentId: paymentIntent.id,
+//     });
+//   } catch (e) {
+//     return res.status(400).send({
+//       error: {
+//         message: e.message,
+//       },
+//     });
+//   }
+// });
+
+
+app.listen(5252, () =>
+  console.log(`Node server listening at http://localhost:5252`)
+);
