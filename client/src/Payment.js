@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 function Payment() {
   // Assume user data is available here for demo purposes
@@ -25,8 +25,8 @@ function Payment() {
 
       {/* Embed the Stripe Pricing Table with dynamic attributes */}
       <stripe-pricing-table
-        pricing-table-id="prctbl_1QGEJxApLisUKZ0vm7zeUewG"
-        publishable-key="pk_test_51QCyUyApLisUKZ0v8RyEoah9vRexnri4RS7ifhEotn0JDtThD7PSizct1mPmNOEZFVDpIjlm1JuCvPM3ANbeMOmc00tptCLiT8"
+        pricing-table-id="prctbl_1QGFTZHcq0BpKt6rNZIVzXzh"
+        publishable-key="pk_test_51QAtlmHcq0BpKt6rHQYZWe68fRkI5jUGdUe7SQp12DF7gEYFj9AlD7QtTJIAIefjCwSByqTtEfjf21R494ntopyY00s2wZT5yV"
        customer-email={user.email}  // Pre-fill email dynamically
        client-reference-id={clientReferenceId}  // Set the client reference ID
       ></stripe-pricing-table>
