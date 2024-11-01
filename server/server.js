@@ -1,5 +1,5 @@
 const express = require("express");
-const cors = require("cors"); 
+const cors = require("cors");
 const app = express();
 const { resolve } = require("path");
 const env = require("dotenv").config({ path: "./.env" });
@@ -7,7 +7,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-04-10",
 });
 
-app.use(cors()); 
+app.use(cors());
 app.use(express.json());
 app.use(express.static(process.env.STATIC_DIR));
 
@@ -25,7 +25,6 @@ app.get("/config", (req, res) => {
 app.post("/create-checkout-session", async (req, res) => {
   try {
     console.log("Request received to create Checkout Session");
-
     // Create a product on Stripe
     const product = await stripe.products.create({
       name: 'Custom Product',
@@ -57,11 +56,11 @@ app.post("/create-checkout-session", async (req, res) => {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: price.id,
+          price: priceId,
           quantity: 1,
         },
       ],
-      mode: 'subscription', // Switch to 'subscription' for upsell options
+      mode: 'subscription',
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel.html`,
       allow_promotion_codes: true, // Enables promo codes if desired
@@ -76,6 +75,7 @@ app.post("/create-checkout-session", async (req, res) => {
       subscription_data: {
         trial_period_days: 14, // Optional trial period for subscription upsell
       },
+
     };
 
     console.log("Checkout Session config:", sessionConfig);
