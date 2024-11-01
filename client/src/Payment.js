@@ -1,51 +1,36 @@
 import { useEffect, useState } from "react";
 
 function Payment() {
-  const [checkoutUrl, setCheckoutUrl] = useState(null);
+  // Assume user data is available here for demo purposes
+  const user = { id: "user_123", email: "customer@example.com" };
+  
+  // Construct the client reference ID dynamically
+  const clientReferenceId = `user_${user.id}`;
 
   useEffect(() => {
-    // Function to create a new Checkout Session
-    const createCheckoutSession = async () => {
-      try {
-        console.log("Creating Checkout Session..."); // Log function call for tracking
-
-        // Request to create a Checkout Session on the server
-        const response = await fetch("/create-checkout-session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            currency: 'usd',  // Currency to be used in the session
-          }),
-        });
-        
-        const data = await response.json();
-        setCheckoutUrl(data.url); // Save the checkout URL for redirection
-        console.log("Checkout URL received:", data.url); // Log received URL
-      } catch (error) {
-        console.error("Error creating Checkout Session:", error); // Log error if creation fails
-      }
+    const loadStripeScript = () => {
+      // Load the Stripe Pricing Table script
+      const script = document.createElement("script");
+      script.src = "https://js.stripe.com/v3/pricing-table.js";
+      script.async = true;
+      document.body.appendChild(script);
     };
 
-    createCheckoutSession(); // Execute the function when the component loads
+    loadStripeScript();
   }, []);
 
-  // Handle redirection to the Checkout page
-  const handleCheckout = () => {
-    if (checkoutUrl) {
-      console.log("Redirecting to Checkout URL:", checkoutUrl); // Log redirection
-      window.location.href = checkoutUrl; // Redirect to the checkout URL
-    } else {
-      console.warn("Checkout URL not available yet."); // Warn if URL is not set
-    }
-  };
-
   return (
-    <>
-      <h1>React Stripe Checkout Example</h1>
-      <button onClick={handleCheckout}>Go to Checkout</button> {/* Button triggers the handleCheckout function */}
-    </>
+    <div>
+      <h1>Stripe Pricing Table Integration</h1>
+
+      {/* Embed the Stripe Pricing Table with dynamic attributes */}
+      <stripe-pricing-table
+        pricing-table-id="prctbl_1QGEJxApLisUKZ0vm7zeUewG"
+        publishable-key="pk_test_51QCyUyApLisUKZ0v8RyEoah9vRexnri4RS7ifhEotn0JDtThD7PSizct1mPmNOEZFVDpIjlm1JuCvPM3ANbeMOmc00tptCLiT8"
+       customer-email={user.email}  // Pre-fill email dynamically
+       client-reference-id={clientReferenceId}  // Set the client reference ID
+      ></stripe-pricing-table>
+    </div>
   );
 }
 

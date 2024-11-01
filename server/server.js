@@ -30,46 +30,52 @@ app.post("/create-checkout-session", async (req, res) => {
     const product = await stripe.products.create({
       name: 'Custom Product',
       description: 'Multi-currency product',
+      metadata: {
+        cross_sell: 'related_product_id', // Optional: ID of a related product for cross-sell
+      }
     });
     console.log("Product created:", product.id);
 
-    // Create a price for the created product
+    // Create a recurring price for the created product
     const price = await stripe.prices.create({
-      unit_amount: 1000,
+      unit_amount: 1000,            // Amount in the smallest currency unit (e.g., cents for EUR)
       currency: 'eur',
       product: product.id,
+      recurring: {
+        interval: 'month',          // Set to 'month', 'year', etc.
+      },
     });
-    console.log("Price created:", price.id);
+    console.log("Recurring Price created:", price.id);
 
-    // Pre-defined shipping rate IDs (these should be created in Stripe Dashboard or via API beforehand)
+    // Pre-defined shipping rate IDs (should be created in Stripe Dashboard or via API beforehand)
     const shippingRateIds = [
-      "shr_1QFzc5Hcq0BpKt6rDvnFMpTI", // replace with actual ID from your Stripe account
-      "shr_1QFzdHHcq0BpKt6rxvAc7STP"   // replace with actual ID from your Stripe account
+  // replace with actual ID from your Stripe account
     ];
 
+    // Set up checkout session config
     const sessionConfig = {
-      payment_method_types: ['card', 'eps'],
+      payment_method_types: ['card'],
       line_items: [
         {
           price: price.id,
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: 'subscription', // Switch to 'subscription' for upsell options
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel.html`,
+      allow_promotion_codes: true, // Enables promo codes if desired
       automatic_tax: { enabled: true },
       tax_id_collection: { enabled: true },
       phone_number_collection: { enabled: true },
       billing_address_collection: "required",
-
-      // Enable shipping address collection
       shipping_address_collection: {
-        allowed_countries: ['US', 'CA', 'DE'], // specify countries where you want to ship
+        allowed_countries: ['US', 'CA', 'DE'],
       },
-
-      // Define shipping options using pre-existing Shipping Rate objects
-      shipping_options: shippingRateIds.map(id => ({ shipping_rate: id }))
+      shipping_options: shippingRateIds.map(id => ({ shipping_rate: id })),
+      subscription_data: {
+        trial_period_days: 14, // Optional trial period for subscription upsell
+      },
     };
 
     console.log("Checkout Session config:", sessionConfig);
