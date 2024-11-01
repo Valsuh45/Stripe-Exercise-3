@@ -25,8 +25,8 @@ function Payment() {
 
       {/* Embed the Stripe Pricing Table with dynamic attributes */}
       <stripe-pricing-table
-        pricing-table-id="prctbl_1QGFTZHcq0BpKt6rNZIVzXzh"
-        publishable-key="pk_test_51QAtlmHcq0BpKt6rHQYZWe68fRkI5jUGdUe7SQp12DF7gEYFj9AlD7QtTJIAIefjCwSByqTtEfjf21R494ntopyY00s2wZT5yV"
+        pricing-table-id="REPLACE_WITH_YOUR_PRICING_TABLE_ID"
+        publishable-key="REPLACE_WITH_YOUR_PUBLISHABLE_KEY"
        customer-email={user.email}  // Pre-fill email dynamically
        client-reference-id={clientReferenceId}  // Set the client reference ID
       ></stripe-pricing-table>
