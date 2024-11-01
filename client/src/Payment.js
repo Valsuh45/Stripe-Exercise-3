@@ -1,36 +1,55 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 function Payment() {
-  // Assume user data is available here for demo purposes
-  const user = { id: "user_123", email: "customer@example.com" };
-  
-  // Construct the client reference ID dynamically
-  const clientReferenceId = `user_${user.id}`;
+  const [checkoutUrl, setCheckoutUrl] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const loadStripeScript = () => {
-      // Load the Stripe Pricing Table script
-      const script = document.createElement("script");
-      script.src = "https://js.stripe.com/v3/pricing-table.js";
-      script.async = true;
-      document.body.appendChild(script);
+    const createCheckoutSession = async () => {
+      try {
+        const response = await fetch("/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currency: 'usd',
+          }),
+        });
+        
+        const data = await response.json();
+        if (data.url) {
+          setCheckoutUrl(data.url);
+        } else {
+          setError("Failed to create Checkout Session");
+        }
+      } catch (error) {
+        console.error("Error creating Checkout Session:", error);
+        setError("An unexpected error occurred.");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    loadStripeScript();
+    createCheckoutSession();
   }, []);
 
-  return (
-    <div>
-      <h1>Stripe Pricing Table Integration</h1>
+  const handleCheckout = () => {
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl;
+    }
+  };
 
-      {/* Embed the Stripe Pricing Table with dynamic attributes */}
-      <stripe-pricing-table
-        pricing-table-id="REPLACE_WITH_YOUR_PRICING_TABLE_ID"
-        publishable-key="REPLACE_WITH_YOUR_PUBLISHABLE_KEY"
-       customer-email={user.email}  // Pre-fill email dynamically
-       client-reference-id={clientReferenceId}  // Set the client reference ID
-      ></stripe-pricing-table>
-    </div>
+  return (
+    <>
+      <h1>React Stripe Checkout Example</h1>
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p>{error}</p>
+      ) : (
+        <button onClick={handleCheckout}>Go to Checkout</button>
+      )}
+    </>
   );
 }
 
