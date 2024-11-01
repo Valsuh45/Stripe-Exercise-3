@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/Stripe-Exercise-3/static/css/main.191137fc.css",
+    "main.js": "/Stripe-Exercise-3/static/js/main.e8aa7f0f.js",
+    "index.html": "/Stripe-Exercise-3/index.html",
+    "main.191137fc.css.map": "/Stripe-Exercise-3/static/css/main.191137fc.css.map",
+    "main.e8aa7f0f.js.map": "/Stripe-Exercise-3/static/js/main.e8aa7f0f.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.191137fc.css",
+    "static/js/main.e8aa7f0f.js"
+  ]
+}
