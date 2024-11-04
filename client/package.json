@@ -17,7 +17,7 @@
     "gh-pages": "^6.2.0"
   },
   "scripts": {
-    "start": "PORT=4242 react-scripts start",
+    "start": "PORT=https://hosted1.onrender.com react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -43,7 +43,7 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:5252",
+  "proxy": "https://hosted1.onrender.com",
   "devDependencies": {
     "gh-pages": "^6.2.0",
     "prettier": "^2.7.1"
