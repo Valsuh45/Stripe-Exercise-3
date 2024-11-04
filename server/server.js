@@ -61,7 +61,6 @@ app.post("/create-checkout-session", async (req, res) => {
     });
   }
 });
-/home/boris/stripe/stripe-exercise3/Stripe-Exercise-3/server
 
 
 
