@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/Stripe-Exercise-3/static/css/main.191137fc.css",
-    "main.js": "/Stripe-Exercise-3/static/js/main.ed2a9acf.js",
+    "main.js": "/Stripe-Exercise-3/static/js/main.c27aec21.js",
     "index.html": "/Stripe-Exercise-3/index.html",
     "main.191137fc.css.map": "/Stripe-Exercise-3/static/css/main.191137fc.css.map",
-    "main.ed2a9acf.js.map": "/Stripe-Exercise-3/static/js/main.ed2a9acf.js.map"
+    "main.c27aec21.js.map": "/Stripe-Exercise-3/static/js/main.c27aec21.js.map"
   },
   "entrypoints": [
     "static/css/main.191137fc.css",
-    "static/js/main.ed2a9acf.js"
+    "static/js/main.c27aec21.js"
   ]
 }
