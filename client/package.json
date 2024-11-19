@@ -2,7 +2,7 @@
   "name": "react-cra",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://ValantineSuh.github.io/Stripe-Exercise-3",
+"homepage": "https://valsuh45.github.io/Stripe-Exercise-3",
   "dependencies": {
     "@stripe/react-stripe-js": "^1.10.0",
     "@stripe/stripe-js": "^1.35.0",
