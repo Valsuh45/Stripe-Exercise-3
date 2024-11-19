@@ -47,7 +47,7 @@ function Payment() {
       ) : error ? (
         <p>{error}</p>
       ) : (
-        <button onClick={handleCheckout}>Go to Checkout</button>
+        <button onClick={handleCheckout}>Book a ticket</button>
       )}
     </>
   );
