@@ -32,7 +32,7 @@ export default function CheckoutForm() {
 
   return (
     <button disabled={isProcessing} onClick={handleClick}>
-      {isProcessing ? "Processing..." : "Checkout"}
+      {isProcessing ? "Processing..." : "Book your ticket"}
     </button>
   );
 }

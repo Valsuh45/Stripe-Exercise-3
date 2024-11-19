@@ -41,7 +41,7 @@ function Payment() {
 
   return (
     <>
-      <h1>React Stripe Checkout Example</h1>
+      <h1>MagicWorld Park</h1>
       {isLoading ? (
         <p>Loading...</p>
       ) : error ? (
