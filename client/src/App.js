@@ -11,8 +11,8 @@ function App() {
       <BrowserRouter basename="/Stripe-Exercise-3">
         <Routes>
           <Route path="/" element={<Payment />} />
-          <Route path="/success" element={<Success />} />
-          <Route path="/cancel" element={<Cancel />} />
+          <Route path="/Success" element={<Success />} />
+          <Route path="/Cancel" element={<Cancel />} />
         </Routes>
       </BrowserRouter>
     </main>
