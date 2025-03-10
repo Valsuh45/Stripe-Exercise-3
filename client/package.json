@@ -5,7 +5,7 @@
 "homepage": "https://Valsuh45.github.io/Stripe-Exercise-3",
   "dependencies": {
     "@stripe/react-stripe-js": "^1.10.0",
-    "@stripe/stripe-js": "^1.35.0",
+    "@stripe/stripe-js": "^1.54.2",
     "@testing-library/jest-dom": "^6.1.6",
     "@testing-library/react": "^12.1.5",
     "@testing-library/user-event": "^14.4.2",
